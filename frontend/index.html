@@ -1,0 +1,30 @@
+<!--
+  This is the main HTML file for your React application.
+  In a Single Page Application (SPA) like this, the browser initially loads this one file.
+  React then takes over and dynamically generates the content inside the `<div id="root">`.
+  The web server doesn't serve a different HTML file for each page; instead, JavaScript manipulates this page.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- The favicon for your site -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- This ensures the site is responsive and scales correctly on different devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <!--
+      This is the root element where your entire React application will be mounted.
+      You'll see this ID referenced in `src/main.tsx`.
+    -->
+    <div id="root"></div>
+    <!--
+      This script tag loads the compiled JavaScript code.
+      `type="module"` allows for using modern JavaScript modules.
+      Vite (the build tool) bundles all your React/TypeScript code into this single entry point.
+    -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

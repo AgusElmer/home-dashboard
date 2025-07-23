@@ -1,0 +1,31 @@
+## Ignore Visual Studio temporary files, build results, and generated files
+[Bb]in/
+[Oo]bj/
+
+## Ignore .NET user-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+## Ignore other potentially sensitive files
+*.db
+*.db3
+
+# Ignore local development settings
+appsettings.Development.json
+
+# Ignore frontend dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/.DS_Store
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Rider
+.idea.user
+.idea.workspace
+
+# Large files
+backend/code.deb
