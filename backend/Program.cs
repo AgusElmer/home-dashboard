@@ -19,10 +19,10 @@ const string CookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 const string AuthCookie   = "auth_token";     // HttpOnly cookie with JWT
 const string CsrfCookie   = "XSRF-TOKEN";     // Non-HttpOnly cookie with CSRF token
 const string CsrfHeader   = "X-XSRF-TOKEN";   // Header the client must send back
-const string FrontUrl     = "http://localhost:5173";
 
 // Initialize the web application builder.
 var builder = WebApplication.CreateBuilder(args);
+var FrontUrl = builder.Configuration["FrontUrl"] ?? throw new Exception("FrontUrl missing");
 
 // Configure the database context to use SQLite with a connection string from configuration.
 builder.Services.AddDbContext<AppDbContext>(opt =>

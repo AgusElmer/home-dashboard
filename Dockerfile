@@ -30,6 +30,16 @@ WORKDIR /app
 # Copy the built backend
 COPY --from=build-backend /app/build .
 
+# Create a non-root user and group
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
+# Create the data directory and set permissions
+# This ensures the directory exists and the appuser has write permissions
+RUN mkdir -p /app/data && chown appuser:appgroup /app/data && chmod 770 /app/data
+
+# Switch to the non-root user
+USER appuser
+
 # Copy the built frontend into the wwwroot folder of the backend
 COPY --from=build-frontend /src/dist wwwroot
 

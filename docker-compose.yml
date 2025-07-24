@@ -1,0 +1,21 @@
+
+services:
+  home-dashboard-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - db_data:/app/data # Mount a named volume for the data directory
+    # If you need to expose the backend API directly for development/debugging,
+    # you might add another port mapping here, e.g., for HTTPS:
+    # - "7107:7107"
+    # Or, if your backend is on a different port than 8080 inside the container:
+    # - "5059:5059"
+    # Ensure these match your ASP.NET Core application's configuration.
+
+volumes:
+  db_data: # Define the named volume

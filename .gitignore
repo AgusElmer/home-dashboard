@@ -29,3 +29,9 @@ frontend/.DS_Store
 
 # Large files
 backend/code.deb
+
+# Docker Compose environment file
+.env
+
+# Developer notes
+developer_notes.md
