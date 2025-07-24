@@ -1,4 +1,3 @@
-// Import necessary namespaces for authentication, data handling, and web functionalities.
 using HomeDashboard.Api.Endpoints;
 using HomeDashboard.Api.Extensions;
 using static HomeDashboard.Api.Constants;
@@ -16,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IO;
 
 // Initialize the web application builder.
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +42,21 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // Ensure the directory for the SQLite database exists
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    if (connectionString != null)
+    {
+        var dataSource = connectionString.Split(';').FirstOrDefault(s => s.StartsWith("Data Source="));
+        if (dataSource != null)
+        {
+            var dbPath = dataSource.Replace("Data Source=", "");
+            var dbDirectory = Path.GetDirectoryName(dbPath);
+            if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+            {
+                Directory.CreateDirectory(dbDirectory);
+            }
+        }
+    }
     db.Database.Migrate();
 }
 
