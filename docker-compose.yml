@@ -4,12 +4,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: debug
     ports:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      - DatabaseProvider=PostgreSQL
+      - ConnectionStrings__PostgresConnection=Host=postgres;Port=5432;Database=homedashboard;Username=homedashboarduser;Password=homedashboardpassword
     volumes:
       - db_data:/app/data # Mount a named volume for the data directory
+    depends_on:
+      postgres:
+        condition: service_healthy
     # If you need to expose the backend API directly for development/debugging,
     # you might add another port mapping here, e.g., for HTTPS:
     # - "7107:7107"
@@ -17,5 +24,23 @@ services:
     # - "5059:5059"
     # Ensure these match your ASP.NET Core application's configuration.
 
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: homedashboard
+      POSTGRES_USER: homedashboarduser
+      POSTGRES_PASSWORD: homedashboardpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homedashboarduser -d homedashboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   db_data: # Define the named volume
+  postgres_data:

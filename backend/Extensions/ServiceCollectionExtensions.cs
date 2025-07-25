@@ -1,15 +1,11 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.DependencyInjection;
+using HomeDashboard.Api.Repositories;
 using HomeDashboard.Api.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using static HomeDashboard.Api.Constants;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace HomeDashboard.Api.Extensions
 {
@@ -17,8 +13,28 @@ namespace HomeDashboard.Api.Extensions
     {
         public static IServiceCollection AddApplicationDbContext(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<AppDbContext>(opt =>
-                opt.UseSqlite(configuration.GetConnectionString("Default")));
+            var databaseProvider = configuration["DatabaseProvider"];
+
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                switch (databaseProvider)
+                {
+                    case "PostgreSQL":
+                        options.UseNpgsql(configuration.GetConnectionString("PostgresConnection"));
+                        break;
+                    case "SQLite":
+                    default:
+                        options.UseSqlite(configuration.GetConnectionString("Default"));
+                        break;
+                }
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddRepositories(this IServiceCollection services)
+        {
+            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<INoteRepository, NoteRepository>();
             return services;
         }
 

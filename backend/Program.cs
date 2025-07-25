@@ -24,6 +24,9 @@ var FrontUrl = builder.Configuration["FrontUrl"] ?? throw new Exception("FrontUr
 // Configure the database context to use SQLite with a connection string from configuration.
 builder.Services.AddApplicationDbContext(builder.Configuration);
 
+// Add and configure repositories
+builder.Services.AddRepositories();
+
 // Configure authentication services.
 builder.Services.AddAppAuthentication(builder.Configuration);
 
@@ -39,26 +42,31 @@ var app = builder.Build();
 // TODO: In production, database migrations should be applied as a separate step in your CI/CD pipeline.
 // For development, you can uncomment the following block to apply migrations on startup.
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // Ensure the directory for the SQLite database exists
-    var connectionString = builder.Configuration.GetConnectionString("Default");
-    if (connectionString != null)
+    using (var scope = app.Services.CreateScope())
     {
-        var dataSource = connectionString.Split(';').FirstOrDefault(s => s.StartsWith("Data Source="));
-        if (dataSource != null)
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var databaseProvider = builder.Configuration["DatabaseProvider"];
+
+        if (databaseProvider == "SQLite")
         {
-            var dbPath = dataSource.Replace("Data Source=", "");
-            var dbDirectory = Path.GetDirectoryName(dbPath);
-            if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+            // Ensure the directory for the SQLite database exists
+            var connectionString = builder.Configuration.GetConnectionString("Default");
+            if (connectionString != null)
             {
-                Directory.CreateDirectory(dbDirectory);
+                var dataSource = connectionString.Split(';').FirstOrDefault(s => s.StartsWith("Data Source="));
+                if (dataSource != null)
+                {
+                    var dbPath = dataSource.Replace("Data Source=", "");
+                    var dbDirectory = Path.GetDirectoryName(dbPath);
+                    if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+                    {
+                        Directory.CreateDirectory(dbDirectory);
+                    }
+                }
             }
         }
+        db.Database.Migrate();
     }
-    db.Database.Migrate();
-}
 
 
 // Enable the CORS policy.

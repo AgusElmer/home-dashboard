@@ -9,6 +9,7 @@ RUN dotnet restore backend/HomeDashboard.Api.csproj
 # Copy everything else and build
 COPY backend/ backend/
 WORKDIR /src/backend
+
 RUN dotnet publish -c Release -o /app/build
 
 # Stage 2: Build the React frontend
@@ -24,7 +25,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 3: Create the final image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
 # Copy the built backend
@@ -47,4 +48,28 @@ COPY --from=build-frontend /src/dist wwwroot
 EXPOSE 8080
 
 # Set the entrypoint
+ENTRYPOINT ["dotnet", "HomeDashboard.Api.dll"]
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS debug
+WORKDIR /app
+
+# Install vsdbg for debugging
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV DOTNET_SDK_VERSION=8.0.400
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+COPY --from=build-backend /app/build .
+
+# Set environment variables for debugging
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_ENVIRONMENT=Development
+
+# Expose the port for the application and the debugger
+EXPOSE 8080
+EXPOSE 8081
+
+# Set the entrypoint for debugging
 ENTRYPOINT ["dotnet", "HomeDashboard.Api.dll"]
