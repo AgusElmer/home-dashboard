@@ -35,3 +35,6 @@ backend/code.deb
 
 # Developer notes
 developer_notes.md
+
+# Local Caddy root certificate (for trusting in browsers)
+caddy-root.crt

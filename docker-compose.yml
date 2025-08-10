@@ -1,28 +1,38 @@
-
 services:
-  home-dashboard-app:
+  app:                                 # <<< ONE container for web+api
     build:
       context: .
       dockerfile: Dockerfile
-      target: debug
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
+      target: debug                   # <-- use the debug stage
+    env_file: .env
     environment:
       - DatabaseProvider=PostgreSQL
       - ConnectionStrings__PostgresConnection=Host=postgres;Port=5432;Database=homedashboard;Username=homedashboarduser;Password=homedashboardpassword
+      - FrontUrl=https://localhost,https://localhost:8443
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+    expose:
+      - "8080"                        # internal HTTP
+      # 4024 no longer needed; using docker exec attach
+    # ports:                         # not needed for debugger with docker exec
+    #   - "4024:4024"                # allow VS Code attach (deprecated)
     volumes:
-      - db_data:/app/data # Mount a named volume for the data directory
+      - db_data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
-    # If you need to expose the backend API directly for development/debugging,
-    # you might add another port mapping here, e.g., for HTTPS:
-    # - "7107:7107"
-    # Or, if your backend is on a different port than 8080 inside the container:
-    # - "5059:5059"
-    # Ensure these match your ASP.NET Core application's configuration.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
 
   postgres:
     image: postgres:16-alpine
@@ -36,11 +46,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U homedashboarduser -d homedashboard"]
+      test: ["CMD-SHELL","pg_isready -U homedashboarduser -d homedashboard"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  db_data: # Define the named volume
+  db_data:
+  caddy_data:
+  caddy_config:
   postgres_data:

@@ -56,9 +56,9 @@ namespace HomeDashboard.Api.Endpoints
                 var csrf  = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
                 ctx.Response.Cookies.Append(CsrfCookie, csrf, new CookieOptions { HttpOnly = false, SameSite = SameSiteMode.Lax, Expires = DateTimeOffset.UtcNow.AddHours(12) });
 
-                // Redirect the user back to the frontend application.
-                var FrontUrl = config["FrontUrl"] ?? throw new Exception("FrontUrl missing");
-                return Results.Redirect(FrontUrl);
+                // Redirect the user back to the same origin
+                // Use a relative redirect so it works for localhost, IP, or tunneled hostnames
+                return Results.Redirect("/");
             });
 
             // The logout endpoint.

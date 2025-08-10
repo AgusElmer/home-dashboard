@@ -1,75 +1,51 @@
-# Stage 1: Build the ASP.NET Core backend
+# ─────────────────────────────────────────────
+# Stage 1	Build	backend
+# ─────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-backend
 WORKDIR /src
-
-# Copy csproj and restore as distinct layers
 COPY backend/HomeDashboard.Api.csproj backend/
 RUN dotnet restore backend/HomeDashboard.Api.csproj
-
-# Copy everything else and build
 COPY backend/ backend/
 WORKDIR /src/backend
-
 RUN dotnet publish -c Release -o /app/build
 
-# Stage 2: Build the React frontend
+# ─────────────────────────────────────────────
+# Stage 2	Build	frontend
+# ─────────────────────────────────────────────
 FROM node:20 AS build-frontend
 WORKDIR /src
-
-# Copy package.json and install dependencies
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package*.json ./
 RUN npm install
-
-# Copy the rest of the frontend code and build
 COPY frontend/ .
-RUN npm run build
+RUN npm run build      # outputs to /src/dist
 
-# Stage 3: Create the final image
+# ─────────────────────────────────────────────
+# Stage 3	Runtime (	production	)
+# ─────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-
-# Copy the built backend
 COPY --from=build-backend /app/build .
+COPY --from=build-frontend /src/dist wwwroot
+USER 1000    # non	root
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "HomeDashboard.Api.dll"]
 
-# Create a non-root user and group
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
-
-# Create the data directory and set permissions
-# This ensures the directory exists and the appuser has write permissions
-RUN mkdir -p /app/data && chown appuser:appgroup /app/data && chmod 770 /app/data
-
-# Switch to the non-root user
-USER appuser
-
-# Copy the built frontend into the wwwroot folder of the backend
+# ─────────────────────────────────────────────
+# Stage 4	Runtime (	debug for VS Code	)
+# ─────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS debug
+WORKDIR /app
+COPY --from=build-backend /app/build .
 COPY --from=build-frontend /src/dist wwwroot
 
-# Expose the port the app will run on
-EXPOSE 8080
+# install vsdbg
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
-# Set the entrypoint
-ENTRYPOINT ["dotnet", "HomeDashboard.Api.dll"]
+# Labels 	VS Code Docker ext. shows “Attach Visual Studio Code”
+LABEL com.microsoft.visualstudio.debug="true"
+LABEL com.microsoft.visualstudio.debug.1="vsdbg;transport=dt_socket;address=0.0.0.0:4024"
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS debug
-WORKDIR /app
-
-# Install vsdbg for debugging
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV DOTNET_SDK_VERSION=8.0.400
-RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
-
-COPY --from=build-backend /app/build .
-
-# Set environment variables for debugging
-ENV ASPNETCORE_ENVIRONMENT=Development
-ENV DOTNET_ENVIRONMENT=Development
-
-# Expose the port for the application and the debugger
-EXPOSE 8080
-EXPOSE 8081
-
-# Set the entrypoint for debugging
-ENTRYPOINT ["dotnet", "HomeDashboard.Api.dll"]
+EXPOSE 8080 4024
+ENTRYPOINT ["dotnet","HomeDashboard.Api.dll"]

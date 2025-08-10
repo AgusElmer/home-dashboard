@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Linq;
 
 namespace HomeDashboard.Api.Extensions
 {
@@ -91,14 +92,32 @@ namespace HomeDashboard.Api.Extensions
 
         public static IServiceCollection AddAppCors(this IServiceCollection services, IConfiguration configuration)
         {
-            var frontUrl = configuration["FrontUrl"] ?? throw new Exception("FrontUrl missing");
+            var frontUrlRaw = configuration["FrontUrl"] ?? throw new Exception("FrontUrl missing");
+            var origins = frontUrlRaw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(o => o.Trim())
+                .ToArray();
+
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
-                    policy.WithOrigins(frontUrl)
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials());
+                {
+                    // Allow wildcard in dev: FrontUrl="*" -> allow all origins with credentials
+                    if (origins.Length == 1 && origins[0] == "*")
+                    {
+                        policy.SetIsOriginAllowed(_ => true)
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
+                    }
+                    else
+                    {
+                        policy.WithOrigins(origins)
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials();
+                    }
+                });
             });
             return services;
         }

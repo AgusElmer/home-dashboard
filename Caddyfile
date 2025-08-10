@@ -1,0 +1,39 @@
+{
+  # Increase verbosity to see TLS details in logs
+  debug
+  # When client connects by IP, Windows SChannel may omit SNI.
+  # Pick the 192.168.1.4 cert by default so the handshake succeeds.
+  default_sni 192.168.1.4
+  servers {
+    # Disable HTTP/3/QUIC to avoid client/proxy oddities while debugging
+    protocols h1 h2
+  }
+}
+
+# Serve HTTPS explicitly for notebook IP and localhost
+https://192.168.1.4 {
+  tls internal
+  log {
+    output stdout
+    format console
+  }
+  # Quick health to confirm Caddy is serving
+  respond /__caddy_health "ok" 200
+  # Be explicit about scheme to the upstream
+  reverse_proxy http://app:8080
+}
+
+https://localhost {
+  tls internal
+  log {
+    output stdout
+    format console
+  }
+  respond /__caddy_health "ok" 200
+  reverse_proxy http://app:8080
+}
+
+# Redirect HTTP to HTTPS during dev
+:80 {
+  redir https://{host}{uri}
+}

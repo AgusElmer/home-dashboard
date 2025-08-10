@@ -1,0 +1,12 @@
+yourdomain.com {
+  # Public TLS: Caddy will fetch/renew certs automatically
+  # Remove this comment and ensure DNS points to this host
+
+  reverse_proxy app:8080
+}
+
+# Optional: redirect HTTP to HTTPS
+:80 {
+  redir https://{host}{uri}
+}
+

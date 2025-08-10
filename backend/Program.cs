@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IO;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Initialize the web application builder.
 var builder = WebApplication.CreateBuilder(args);
@@ -71,6 +72,16 @@ var app = builder.Build();
 
 // Enable the CORS policy.
 app.UseSecurityHeaders();
+
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+// In Docker dev behind Caddy, trust all proxies to honor X-Forwarded-*.
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
 app.UseCors();
 
 // Serve static files from the wwwroot folder
